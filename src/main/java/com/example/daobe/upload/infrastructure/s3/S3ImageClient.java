@@ -11,17 +11,15 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @RequiredArgsConstructor
 public class S3ImageClient implements ImageClient {
 
-    private static final String CACHE_CONTROL_PREFIX = "max-age=";
-
     private final S3Uploader s3Uploader;
     private final S3Properties properties;
     private final S3PresignHandler s3PresignedUrlGenerator;
 
+    @Deprecated(since = "2024-10-21")
     @Override
     public String upload(String objectKey, MultipartFile file) {
         String bucketName = properties.bucketName();
-        int cacheTimeSeconds = properties.cacheTimeSeconds();
-        s3Uploader.upload(cacheTimeSeconds, bucketName, objectKey, file);
+        s3Uploader.upload(bucketName, objectKey, file);
         return getImageUrl(objectKey);
     }
 
@@ -40,7 +38,6 @@ public class S3ImageClient implements ImageClient {
         return PutObjectRequest.builder()
                 .bucket(properties.bucketName())
                 .key(objectKey)
-                .cacheControl(CACHE_CONTROL_PREFIX + properties.cacheTimeSeconds())
                 .build();
     }
 }
