@@ -16,22 +16,15 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @RequiredArgsConstructor
 public class S3Uploader {
 
-    private static final String CACHE_CONTROL_PREFIX = "max-age=";
-
     private final S3Client s3Client;
 
-    public void upload(int cacheTimeSeconds, String bucketName, String key, MultipartFile file) {
+    public void upload(String bucketName, String key, MultipartFile file) {
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(key)
                 .contentType(file.getContentType())
-                .cacheControl(generateCacheControlHeader(cacheTimeSeconds))
                 .build();
         putObject(request, file);
-    }
-
-    private String generateCacheControlHeader(int cacheTimeSeconds) {
-        return CACHE_CONTROL_PREFIX + cacheTimeSeconds;
     }
 
     private void putObject(PutObjectRequest request, MultipartFile file) {
