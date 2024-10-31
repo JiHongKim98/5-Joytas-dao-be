@@ -1,5 +1,8 @@
 package com.example.daobe.common.throttling;
 
+import static com.example.daobe.common.throttling.RateLimitExceptionType.RATE_LIMIT_USER_ID_ERROR_MESSAGE;
+import static com.example.daobe.common.throttling.RateLimitExceptionType.THROTTLING_EXCEPTION;
+
 import com.example.daobe.common.throttling.annotation.RateLimited;
 import com.example.daobe.common.utils.DaoStringUtils;
 import io.github.bucket4j.BucketConfiguration;
@@ -19,12 +22,10 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @RequiredArgsConstructor
 public class RateLimitInterceptor implements HandlerInterceptor {
 
-    private static final String DETERMINE = ":";
+    private static final String DELIMITER = ":";
     private static final int CONSUME_TOKEN_COUNT = 1;
-    private static final String RATE_LIMIT_REMAINING = "X-Rate-Limit-Remaining";
-    private static final String RATE_LIMIT_RETRY_AFTER = "X-Rate-Limit-Retry-After";
-    private static final String RATE_LIMIT_USER_ID_ERROR_MESSAGE =
-            "Rate limiting is enabled but failed to extract userId from security context";
+    private static final String HEADER_REMAIN = "X-Rate-Limit-Remaining";
+    private static final String HEADER_RETRY_AFTER = "X-Rate-Limit-Retry-After";
 
     private final LettuceBasedProxyManager<String> proxyManager;
 
@@ -35,40 +36,22 @@ public class RateLimitInterceptor implements HandlerInterceptor {
             Object handler
     ) throws Exception {
         RateLimited rateLimited = extractRateLimitedAnnotation(handler);
+        if (rateLimited == null) {
+            return true;
+        }
 
-        if (rateLimited != null) {
-            Long userId = extractUserIdFromSecurityContext();
+        Long userId = extractUserIdFromSecurityContext();
+        if (userId == null) {
+            throw new RateLimitException(RATE_LIMIT_USER_ID_ERROR_MESSAGE);
+        }
 
-            if (userId != null) {
-                BucketConfiguration configuration = BucketConfiguration.builder()
-                        .addLimit(limit -> limit.capacity(rateLimited.capacity()).refillGreedy(
-                                rateLimited.refillTokens(),
-                                Duration.ofSeconds(rateLimited.refillSeconds())
-                        ))
-                        .build();
-                BucketProxy bucket = proxyManager.getProxy(
-                        generateRateLimiterName(rateLimited.name(), userId),
-                        () -> configuration
-                );
-
-                ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(CONSUME_TOKEN_COUNT);
-                if (!probe.isConsumed()) {
-                    long waitForRefillSeconds = TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForRefill());
-                    response.setHeader(RATE_LIMIT_RETRY_AFTER, String.valueOf(waitForRefillSeconds));
-                    throw new RateLimitException(RateLimitExceptionType.THROTTLING_EXCEPTION);
-                }
-
-                long remainingTokens = probe.getRemainingTokens();
-                response.setHeader(RATE_LIMIT_REMAINING, String.valueOf(remainingTokens));
-                return true;
-            }
-            throw new RuntimeException(RATE_LIMIT_USER_ID_ERROR_MESSAGE);
+        BucketProxy bucket = getBucketProxy(rateLimited, userId);
+        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(CONSUME_TOKEN_COUNT);
+        setRateLimitHeaders(response, probe);
+        if (!probe.isConsumed()) {
+            throw new RateLimitException(THROTTLING_EXCEPTION);
         }
         return true;
-    }
-
-    private String generateRateLimiterName(String rateLimiterName, Long userId) {
-        return DaoStringUtils.combineToString(rateLimiterName, DETERMINE, userId);
     }
 
     private Long extractUserIdFromSecurityContext() {
@@ -85,5 +68,24 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         }
         return null;
     }
-}
 
+    private BucketProxy getBucketProxy(RateLimited rateLimited, Long userId) {
+        BucketConfiguration config = BucketConfiguration.builder()
+                .addLimit(limit -> limit.capacity(rateLimited.capacity())
+                        .refillGreedy(rateLimited.refillTokens(), Duration.ofSeconds(rateLimited.refillSeconds())))
+                .build();
+        return proxyManager.getProxy(generateBucketName(rateLimited.name(), userId), () -> config);
+    }
+
+    private String generateBucketName(String rateLimiterName, Long userId) {
+        return DaoStringUtils.combineToString(rateLimiterName, DELIMITER, userId);
+    }
+
+    private void setRateLimitHeaders(HttpServletResponse response, ConsumptionProbe probe) {
+        long remainingTokens = probe.getRemainingTokens();
+        long waitForRefillMillis = TimeUnit.NANOSECONDS.toMillis(probe.getNanosToWaitForRefill());
+
+        response.setHeader(HEADER_REMAIN, String.valueOf(waitForRefillMillis));
+        response.setHeader(HEADER_RETRY_AFTER, String.valueOf(remainingTokens));
+    }
+}
