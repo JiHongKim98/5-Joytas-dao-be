@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   mysql:
     image: mysql:8.3.0
@@ -16,6 +14,8 @@ services:
     volumes:
       - dao-mysqldb:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend-network
 
   redis:
     image: redis:7.2.4-alpine
@@ -27,6 +27,10 @@ services:
       - 'mode:standalone'
     ports:
       - '6379:6379'
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend-network
 
   mongodb:
     image: mongo:7.0.1
@@ -41,7 +45,34 @@ services:
     volumes:
       - mongo-data:/data/db
       - ./init.js:/docker-entrypoint-initdb.d/init.js
+    networks:
+      - backend-network
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    restart: always
+    ports:
+      - '4566:4566'
+    environment:
+      - SERVICES=sqs
+      - AWS_DEFAULT_REGION=ap-northeast-2
+      - AWS_ACCESS_KEY_ID=aws-local-access
+      - AWS_SECRET_ACCESS_KEY=aws-local-secret
+      - PERSISTENCE=true
+      - DEBUG=1
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - ./init-queues.sh:/etc/localstack/init/ready.d/init-queues.sh
+    networks:
+      - backend-network
 
 volumes:
   dao-mysqldb:
+  redis-data:
   mongo-data:
+  localstack-data:
+
+networks:
+  backend-network:
+    external: true
