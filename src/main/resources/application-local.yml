@@ -48,11 +48,21 @@ spring:
       auto-index-creation: true
       authentication-database: admin
 
+  cloud:
+    aws:
+      credentials:
+        access-key: aws-local-access
+        secret-key: aws-local-secret
+      sqs:
+        enabled: true
+        endpoint: http://sqs.ap-northeast-2.localhost.localstack.cloud:4566/000000000000
+        region: ap-northeast-2
+
   jpa:
-    properties:
-      hibernate:
-        format_sql: true
-        highlight_sql: true
+    #properties:
+    #  hibernate:
+    #    format_sql: true
+    #    highlight_sql: true
     open-in-view: false
 
   security:
@@ -113,6 +123,7 @@ security:
 logging:
   level:
     org.hibernate.SQL: debug
+    org.springframework.jdbc.core.JdbcTemplate: debug
 
 cloud:
   aws:
@@ -122,3 +133,8 @@ cloud:
       secret-key: ${S3_SECRET_KEY}
       image-url: ${S3_IMAGE_URL}
       region: ${S3_REGION}
+
+aws:
+  sqs:
+    queue: dao-local-queue.fifo
+    group-id: notification-group
