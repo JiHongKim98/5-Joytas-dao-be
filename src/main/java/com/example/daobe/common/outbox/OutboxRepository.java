@@ -8,12 +8,12 @@ import org.springframework.data.jpa.repository.Query;
 public interface OutboxRepository extends JpaRepository<Outbox, String> {
 
     @Query("""
-            SELECT o FROM Outbox o
-            WHERE o.createdAt < :time
-                AND o.isComplete = false
-                AND o.deliveryCount < 5
-            ORDER BY o.createdAt ASC
-            LIMIT 100
+            SELECT ob FROM Outbox ob
+            WHERE ob.createdAt < :time
+                AND ob.isComplete = false
+                AND ob.deliveryCount < 5
+            ORDER BY ob.createdAt
+            LIMIT :limit
             """)
-    List<Outbox> findAllBy(LocalDateTime time);
+    List<Outbox> findAllBy(LocalDateTime time, int limit);
 }
