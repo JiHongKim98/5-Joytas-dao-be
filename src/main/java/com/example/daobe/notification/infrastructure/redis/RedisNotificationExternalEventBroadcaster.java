@@ -1,12 +1,13 @@
 package com.example.daobe.notification.infrastructure.redis;
 
 import com.example.daobe.notification.application.NotificationExternalEventPublisher;
-import com.example.daobe.notification.application.dto.NotificationEventPayloadDto;
+import com.example.daobe.notification.domain.event.NotificationCreateEvent;
+import com.example.daobe.notification.infrastructure.redis.payload.NotificationCreateEventPayload;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -14,20 +15,21 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RedisNotificationExternalEventPublisher implements NotificationExternalEventPublisher {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final String NOTIFICATION_CHANNEL_TOPIC = "notification:channel";
 
-    private final RedisTemplate<String, String> redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
-    public void execute(NotificationEventPayloadDto payload) {
+    public void execute(NotificationCreateEvent event) {
+        NotificationCreateEventPayload payload = NotificationCreateEventPayload.from(event);
         redisTemplate.convertAndSend(
                 NOTIFICATION_CHANNEL_TOPIC,
-                serializeToString(payload)
+                serialize(payload)
         );
     }
 
-    private String serializeToString(Object payload) {
+    private String serialize(NotificationCreateEventPayload payload) {
         try {
             return objectMapper.writeValueAsString(payload);
         } catch (JsonProcessingException e) {
