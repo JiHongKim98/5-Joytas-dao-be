@@ -6,6 +6,7 @@ import com.example.daobe.common.domain.BaseTimeEntity;
 import com.example.daobe.notification.exception.NotificationException;
 import com.example.daobe.user.domain.User;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -33,34 +34,34 @@ public class Notification extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JoinColumn(name = "receive_user_id")
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User receiveUser;
+    @Column(name = "receiver_id")
+    private Long receiverId;
 
-    @JoinColumn(name = "send_user_id")
     @ManyToOne(fetch = FetchType.LAZY)
-    private User sendUser;
+    @JoinColumn(name = "sender_user")
+    private User senderUser;
 
-    @Column(name = "domain_id")
-    private Long domainId;
+    @Embedded
+    private NotificationDomainInfo domainInfo;
 
     @Enumerated(value = EnumType.STRING)
+    @Column(name = "notification_type")
     private NotificationEventType type;
 
     @Column(name = "is_read")
     private boolean isRead;
 
     @Builder
-    public Notification(User receiveUser, User sendUser, Long domainId, NotificationEventType type) {
-        this.receiveUser = receiveUser;
-        this.sendUser = sendUser;
-        this.domainId = domainId;
-        this.type = type;
+    public Notification(User senderUser, Long receiverId, Long domainId, String domainName, String type) {
+        this.senderUser = senderUser;
+        this.receiverId = receiverId;
+        this.domainInfo = domainId == null ? null : new NotificationDomainInfo(domainId, domainName);
+        this.type = NotificationEventType.convertByStringEventType(type);
         this.isRead = false;
     }
 
     public void updateReadStateIfOwnNotification(Long userId) {
-        if (!Objects.equals(receiveUser.getId(), userId)) {
+        if (!Objects.equals(receiverId, userId)) {
             throw new NotificationException(IS_NOT_OWN_NOTIFICATION);
         }
         isRead = true;
