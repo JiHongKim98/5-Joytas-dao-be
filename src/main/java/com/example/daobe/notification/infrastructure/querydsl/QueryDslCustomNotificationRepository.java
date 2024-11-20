@@ -1,6 +1,7 @@
 package com.example.daobe.notification.infrastructure.querydsl;
 
 import static com.example.daobe.notification.domain.QNotification.notification;
+import static com.example.daobe.user.domain.QUser.user;
 
 import com.example.daobe.notification.domain.Notification;
 import com.example.daobe.notification.domain.repository.CustomNotificationRepository;
@@ -23,9 +24,11 @@ public class QueryDslCustomNotificationRepository implements CustomNotificationR
     @Override
     public Slice<Notification> findNotificationByCondition(NotificationFindCondition condition) {
         List<Notification> result = queryFactory.selectFrom(notification)
+                .join(notification.senderUser, user)
+                .fetchJoin()
                 .where(
                         notificationIdLt(condition.cursor()),
-                        notification.receiveUser.id.eq(condition.userId())
+                        notification.receiverId.eq(condition.userId())
                 )
                 .limit(condition.executeLimitSize())
                 .orderBy(notification.id.desc())
