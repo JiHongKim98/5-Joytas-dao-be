@@ -1,6 +1,6 @@
 package com.example.daobe.notification.infrastructure.redis;
 
-import com.example.daobe.notification.application.NotificationExternalEventPublisher;
+import com.example.daobe.notification.application.NotificationExternalEventBroadcaster;
 import com.example.daobe.notification.domain.event.NotificationCreateEvent;
 import com.example.daobe.notification.infrastructure.redis.payload.NotificationCreateEventPayload;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RedisNotificationExternalEventPublisher implements NotificationExternalEventPublisher {
+public class RedisNotificationExternalEventBroadcaster implements NotificationExternalEventBroadcaster {
 
     private static final String NOTIFICATION_CHANNEL_TOPIC = "notification:channel";
 

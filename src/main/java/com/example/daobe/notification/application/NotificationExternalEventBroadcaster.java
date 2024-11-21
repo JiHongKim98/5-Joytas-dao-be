@@ -2,7 +2,7 @@ package com.example.daobe.notification.application;
 
 import com.example.daobe.notification.domain.event.NotificationCreateEvent;
 
-public interface NotificationExternalEventPublisher {
+public interface NotificationExternalEventBroadcaster {
 
     void execute(NotificationCreateEvent event);
 }
