@@ -8,7 +8,6 @@ import com.example.daobe.notification.domain.repository.EmitterRepository;
 import com.example.daobe.notification.domain.repository.NotificationRepository;
 import com.example.daobe.notification.exception.NotificationException;
 import com.example.daobe.notification.exception.NotificationExceptionType;
-import com.example.daobe.notification.infrastructure.redis.payload.NotificationCreateEventPayload;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,12 +38,12 @@ public class NotificationSubscribeService {
         return emitter;
     }
 
-    public void publishToClient(NotificationCreateEventPayload payload) {
-        List<NotificationEmitter> emitterList = emitterRepository.findAllByUserId(payload.receiverId());
-        Notification notification = notificationRepository.findById(payload.notificationId())
+    public void publishToClient(Long notificationId, Long senderId) {
+        Notification notification = notificationRepository.findByIdWithSender(notificationId, senderId)
                 .orElseThrow(() -> new NotificationException(NotificationExceptionType.NOT_EXIST_NOTIFICATION));
-        NotificationInfoResponseDto responseDto = NotificationInfoResponseDto.of(notification);
-        emitterList.forEach(emitter -> sendToClient(emitter, responseDto));
+        List<NotificationEmitter> emitterList = emitterRepository.findAllByUserId(notification.getReceiverId());
+        NotificationInfoResponseDto response = NotificationInfoResponseDto.of(notification);
+        emitterList.forEach(emitter -> sendToClient(emitter, response));
     }
 
     private void configurationEmitter(SseEmitter emitter, String emitterId) {

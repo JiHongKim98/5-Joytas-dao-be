@@ -13,14 +13,13 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RedisNotificationMessageListener implements MessageListener {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
+    private final ObjectMapper objectMapper;
     private final NotificationSubscribeService notificationSubscribeService;
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
         NotificationCreateEventPayload payload = deserializeFromBytes(message.getBody());
-        notificationSubscribeService.publishToClient(payload);
+        notificationSubscribeService.publishToClient(payload.notificationId(), payload.senderId());
     }
 
     private NotificationCreateEventPayload deserializeFromBytes(byte[] bytes) {
