@@ -16,7 +16,7 @@ public class SqsNotificationListener {
     private final ObjectMapper objectMapper;
     private final NotificationCreateService notificationCreateService;
 
-    @SqsListener(value = "${aws.sqs.joytas.queue}", id = "{sqs.joytas.group-id}")
+    @SqsListener(value = "${aws.sqs.queue}", id = "{aws.sqs.group-id}")
     public void handleCreateNotification(String payload, Acknowledgement acknowledgement) {
         NotificationExternalEventPayload eventPayload = deserialize(payload);
         notificationCreateService.createNotification(eventPayload.toCommand());
