@@ -4,13 +4,13 @@ import com.example.daobe.notification.domain.Notification;
 
 public record NotificationCreateEvent(
         Long notificationId,
-        Long receiverId
+        Long senderId
 ) {
 
     public static NotificationCreateEvent of(Notification notification) {
         return new NotificationCreateEvent(
                 notification.getId(),
-                notification.getReceiverId()
+                notification.getSenderUser().getId()
         );
     }
 }
