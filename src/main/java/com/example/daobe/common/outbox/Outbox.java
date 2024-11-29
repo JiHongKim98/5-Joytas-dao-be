@@ -2,6 +2,8 @@ package com.example.daobe.common.outbox;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -17,14 +19,18 @@ import lombok.NoArgsConstructor;
 public class Outbox {
 
     @Id
-    @Column(name = "noti_outbox_id")
+    @Column(name = "outbox_id")
     private String id;
 
-    @Column(name = "aggregate_type", nullable = false)
-    private String aggregateType;
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "event_type", nullable = false)
+    private OutboxEventType eventType;
 
     @Column(columnDefinition = "TEXT")
     private String payload;
+
+    @Column(name = "delivery_count")
+    private int deliveryCount;
 
     @Column(name = "is_complete")
     private boolean isComplete;
@@ -32,16 +38,25 @@ public class Outbox {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
+
     @Builder
-    public Outbox(String id, String aggregateType, String payload) {
+    public Outbox(String id, OutboxEventType eventType, String payload) {
         this.id = id;
-        this.aggregateType = aggregateType;
+        this.eventType = eventType;
         this.payload = payload;
+        this.deliveryCount = 1;
         this.isComplete = false;
         this.createdAt = LocalDateTime.now();
     }
 
+    public void increaseDeliveryCount() {
+        deliveryCount++;
+    }
+
     public void complete() {
-        this.isComplete = true;
+        isComplete = true;
+        publishedAt = LocalDateTime.now();
     }
 }

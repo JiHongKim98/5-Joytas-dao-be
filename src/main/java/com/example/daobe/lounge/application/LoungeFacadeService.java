@@ -8,10 +8,12 @@ import com.example.daobe.lounge.application.dto.LoungeInviteRequestDto;
 import com.example.daobe.lounge.application.dto.LoungeSharerInfoResponseDto;
 import com.example.daobe.lounge.application.dto.LoungeValidateRequestDto;
 import com.example.daobe.lounge.domain.Lounge;
+import com.example.daobe.lounge.domain.event.LoungeInvitedEvent;
 import com.example.daobe.user.application.UserService;
 import com.example.daobe.user.domain.User;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class LoungeFacadeService {
     private final UserService userService;
     private final LoungeService loungeService;
     private final LoungeSharerService loungeSharerService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public LoungeCreateResponseDto createLounge(LoungeCreateRequestDto request, Long userId) {
@@ -53,6 +56,8 @@ public class LoungeFacadeService {
         User findUser = userService.getUserById(request.userId());
         Lounge findLounge = loungeService.getLoungeById(request.loungeId());
         loungeSharerService.inviteUser(findUser, findLounge, inviterId);
+
+        eventPublisher.publishEvent(LoungeInvitedEvent.of(inviterId, findUser.getId(), findLounge));
     }
 
     @Transactional

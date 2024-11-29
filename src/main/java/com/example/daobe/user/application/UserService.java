@@ -83,8 +83,7 @@ public class UserService {
             throw new UserException(NOT_EXIST_USER);
         }
 
-        UserPokeEvent userPokeEvent = new UserPokeEvent(userId, receiveUserId);
-
+        UserPokeEvent userPokeEvent = UserPokeEvent.of(userId, receiveUserId);
         eventPublisher.publishEvent(userPokeEvent);
     }
 

@@ -1,40 +1,53 @@
 package com.example.daobe.notification.application.dto;
 
 import com.example.daobe.notification.domain.Notification;
-import com.example.daobe.notification.domain.convert.dto.DomainInfo;
+import com.example.daobe.notification.domain.NotificationDomainInfo;
 import com.example.daobe.user.domain.User;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record NotificationInfoResponseDto(
-        @JsonProperty("notification_id") Long notificationId,
-        @JsonProperty("type") String type,
-        @JsonProperty("is_read") boolean isRead,
-        @JsonProperty("datetime") String dateTime,
-        @JsonProperty("sender") UserInfo sender,
-        @JsonProperty("detail") DomainInfo detail
+        Long notificationId,
+        String type,
+        boolean isRead,
+        String dateTime,
+        DomainInfo detail,
+        SenderUserInfo sender
 ) {
 
-    public static NotificationInfoResponseDto of(Notification notification, DomainInfo domainInfo) {
+    public static NotificationInfoResponseDto of(Notification notification) {
         return new NotificationInfoResponseDto(
                 notification.getId(),
                 notification.getType().type(),
                 notification.isRead(),
                 notification.getCreatedAt().toString(),
-                UserInfo.of(notification.getSendUser()),
-                domainInfo
+                notification.getDomainInfo() == null ? null : DomainInfo.of(notification.getDomainInfo()),
+                SenderUserInfo.of(notification.getSenderUser())
         );
     }
 
     // Nested
-    private record UserInfo(
-            @JsonProperty("user_id") Long userId,
+    private record DomainInfo(
+            Long domainId,
+            String name
+    ) {
+
+        public static DomainInfo of(NotificationDomainInfo domainInfo) {
+            return new DomainInfo(
+                    domainInfo.getDomainId(),
+                    domainInfo.getDomainName()
+            );
+        }
+    }
+
+    // Nested
+    private record SenderUserInfo(
+            Long userId,
             String nickname
     ) {
 
-        public static UserInfo of(User user) {
-            return new UserInfo(
-                    user.getId(),
-                    user.getNickname()
+        public static SenderUserInfo of(User senderUser) {
+            return new SenderUserInfo(
+                    senderUser.getId(),
+                    senderUser.getNickname()
             );
         }
     }

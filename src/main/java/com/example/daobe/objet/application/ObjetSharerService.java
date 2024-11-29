@@ -44,7 +44,7 @@ public class ObjetSharerService {
 
         objetSharerList.stream()
                 .filter(objetSharer -> !objetSharer.getUser().getId().equals(userId))
-                .map(objetSharer -> new ObjetInviteEvent(userId, objetSharer))
+                .map(objetSharer -> ObjetInviteEvent.of(userId, objetSharer))
                 .forEach(eventPublisher::publishEvent);
     }
 
@@ -66,8 +66,9 @@ public class ObjetSharerService {
 
         objetSharerRepository.saveAll(newObjetSharerList);
         newObjetSharerList.forEach(
+                // TODO: 개선해야함.
                 objetSharer -> eventPublisher.publishEvent(
-                        new ObjetInviteEvent(objet.getUser().getId(), objetSharer)
+                        ObjetInviteEvent.of(objet.getUser().getId(), objetSharer)
                 )
         );
     }
