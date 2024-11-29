@@ -1,7 +1,7 @@
 package com.example.daobe.common.config;
 
 import com.example.daobe.chat.infrastructure.redis.RedisChatMessageListener;
-import com.example.daobe.notification.infrastructure.redis.RedisNotificationMessageListener;
+import com.example.daobe.notification.infrastructure.redis.RedisNotificationBroadcastListener;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -30,7 +30,7 @@ public class RedisConfig {
 
     private final RedisProperties redisProperties;
     private final RedisChatMessageListener chatMessageListener;
-    private final RedisNotificationMessageListener notificationMessageListener;
+    private final RedisNotificationBroadcastListener notificationBroadcastListener;
 
     @Bean
     public RedisClient redisClient() {
@@ -67,7 +67,7 @@ public class RedisConfig {
 
     private void notificationSubscribe(RedisMessageListenerContainer container) {
         container.addMessageListener(
-                notificationMessageListener,
+                notificationBroadcastListener,
                 new ChannelTopic(NOTIFICATION_CHANNEL_TOPIC)
         );
     }
