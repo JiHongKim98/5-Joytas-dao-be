@@ -1,7 +1,8 @@
 package com.example.daobe.common.config;
 
 import com.example.daobe.chat.infrastructure.redis.RedisChatMessageListener;
-import com.example.daobe.notification.infrastructure.redis.RedisNotificationBroadcastListener;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.jihongkim98.redisextensions.EnableRedisBroadcast;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -20,15 +21,14 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
+@EnableRedisBroadcast
 @RequiredArgsConstructor
 public class RedisConfig {
 
     private static final String CHATTING_CHANNEL_TOPIC = "chatting:channel";
-    private static final String NOTIFICATION_CHANNEL_TOPIC = "notification:channel";
 
     private final RedisProperties redisProperties;
     private final RedisChatMessageListener chatMessageListener;
-    private final RedisNotificationBroadcastListener notificationBroadcastListener;
 
     @Bean
     public RedisClient redisClient() {
@@ -49,25 +49,20 @@ public class RedisConfig {
     ) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
-        notificationSubscribe(container);
         chatSubscribe(container);
         return container;
     }
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+    public RedisTemplate<String, Object> redisTemplate(
+            ObjectMapper objectMapper,
+            RedisConnectionFactory connectionFactory
+    ) {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(connectionFactory);
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(String.class));
+        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(objectMapper, String.class));
         return redisTemplate;
-    }
-
-    private void notificationSubscribe(RedisMessageListenerContainer container) {
-        container.addMessageListener(
-                notificationBroadcastListener,
-                new ChannelTopic(NOTIFICATION_CHANNEL_TOPIC)
-        );
     }
 
     private void chatSubscribe(RedisMessageListenerContainer container) {
