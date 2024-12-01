@@ -42,6 +42,8 @@ spring:
     redis:
       host: localhost
       port: 6379
+      repositories:
+        enabled: false
     mongodb:
       uri: mongodb://root:root@localhost:27017/dao-local-db?authSource=admin
       database: dao-local-db
